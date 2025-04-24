@@ -1,22 +1,45 @@
 <!DOCTYPE html><html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Advanced Calculator</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Calculator</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.0/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.6.0/math.min.js"></script>
+  <style>
+    .btn {
+      background-color: #e5e7eb;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      background-color: #d1d5db;
+    }
+    .dark .btn {
+      background-color: #374151;
+    }
+    .dark .btn:hover {
+      background-color: #4b5563;
+    }
+    .btn:active {
+      transform: scale(0.95);
+    }
+  </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white transition-all duration-300">  <div class="flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 transition-all duration-300">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white transition-all duration-300">
+  <div class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
       <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
-        <h1 class="text-2xl font-bold">Advanced Calculator</h1>
+        <h1 class="text-2xl font-bold">Universal Calculator</h1>
         <div class="flex flex-wrap gap-2">
-          <button onclick="toggleTheme()" class="px-2 py-1 rounded bg-gray-300 dark:bg-gray-700">Toggle Mode</button>
-          <button onclick="toggleScientific()" class="px-2 py-1 rounded bg-gray-300 dark:bg-gray-700">Scientific</button>
-          <button onclick="toggleHistory()" class="px-2 py-1 rounded bg-gray-300 dark:bg-gray-700">Show History</button>
-          <button onclick="startVoiceInput()" class="px-2 py-1 rounded bg-gray-300 dark:bg-gray-700">Voice Input</button>
+          <button onclick="toggleTheme()" class="btn">Toggle Mode</button>
+          <button onclick="toggleScientific()" class="btn">Scientific</button>
+          <button onclick="toggleHistory()" class="btn">Show History</button>
+          <button onclick="startVoiceInput()" class="btn">Voice Input</button>
         </div>
-      </div><input id="display" type="text" class="w-full mb-4 text-right text-2xl bg-gray-100 dark:bg-gray-700 p-3 rounded-lg" disabled />
+      </div><input id="display" type="text" class="w-full mb-4 text-right text-2xl bg-gray-100 dark:bg-gray-700 p-3 rounded-lg" disabled>
 
   <div class="grid grid-cols-4 gap-3">
     <button class="btn" onclick="clearDisplay()">C</button>
@@ -60,7 +83,7 @@
   </div>
 
   <div class="w-full my-4">
-    <input id="historySearch" type="text" class="w-full p-2 rounded-lg bg-gray-100 dark:bg-gray-700" placeholder="Search History" oninput="filterHistory()"/>
+    <input id="historySearch" type="text" class="w-full p-2 rounded-lg bg-gray-100 dark:bg-gray-700" placeholder="Search History" oninput="filterHistory()" />
   </div>
 
   <div class="flex gap-2 mb-4">
@@ -83,148 +106,98 @@
   </div>
 </div>
 
-  </div>  <style>
-    .btn {
-      @apply bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 p-3 rounded-lg text-lg font-semibold transition-all;
-    }
-    .btn:active {
-      transform: scale(0.95);
-    }
-  </style>  <script>
-  const display = document.getElementById('display');
-  const scientific = document.getElementById('scientific');
-  const historyPanel = document.getElementById('historyPanel');
-  const historyList = document.getElementById('historyList');
-  const timerDisplay = document.getElementById('timerDisplay');
-  const historySearch = document.getElementById('historySearch');
+  </div>  <script>
+    const display = document.getElementById('display');
+    const scientific = document.getElementById('scientific');
+    const historyPanel = document.getElementById('historyPanel');
+    const historyList = document.getElementById('historyList');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const historySearch = document.getElementById('historySearch');
 
-  let history = JSON.parse(localStorage.getItem('history')) || [];
-  let undoStack = [], redoStack = [];
-  let timerInterval = null, timerSeconds = 0;
-
-  const updateDisplay = val => (display.value = val);
-const append = val => {
-  const lastChar = display.value.slice(-1);
-  const isOperator = /[+\-*/%.]/.test(val);
-  const lastIsOperator = /[+\-*/%.]/.test(lastChar);
-
-  // Prevent duplicate operators
-  if (isOperator && lastIsOperator) {
-    display.value = display.value.slice(0, -1) + val; // Replace operator
-  } else {
-    undoStack.push(display.value);
-    redoStack = [];
-    display.value += val;
-  }
-};
-  
-  const clearDisplay = () => updateDisplay('');
-  const deleteChar = () => updateDisplay(display.value.slice(0, -1));
-  const toRadians = deg => deg * (Math.PI / 180);
-  const sanitize = expr => expr.replace(/[+\-*/%.]+$/, '');
-
-  function calculate() {
+    let history = [];
     try {
-      const expr = sanitize(display.value);
-      if (!expr) return;
-      const result = Function('"use strict"; return (' + expr + ')')();
-      history.unshift(`${expr} = ${result}`);
-      localStorage.setItem('history', JSON.stringify(history));
-      updateHistory(history);
-      updateDisplay(result);
-    } catch {
-      updateDisplay('Error');
-    }
-  }
+      history = JSON.parse(localStorage.getItem('history')) || [];
+    } catch (e) { history = []; }
 
-  const updateHistory = list => {
-    historyList.innerHTML = list.slice(0, 10).map(item => `<li>${item}</li>`).join('');
-  };
+    let undoStack = [], redoStack = [], timerInterval = null, timerSeconds = 0;
 
-  const filterHistory = () => {
-    const search = historySearch.value.toLowerCase();
-    updateHistory(history.filter(item => item.toLowerCase().includes(search)));
-  };
-
-  const undo = () => {
-    if (undoStack.length) {
-      redoStack.push(display.value);
-      updateDisplay(undoStack.pop());
-    }
-  };
-
-  const redo = () => {
-    if (redoStack.length) {
-      undoStack.push(display.value);
-      updateDisplay(redoStack.pop());
-    }
-  };
-
-  const toggleTheme = () => document.body.classList.toggle('dark');
-  const toggleScientific = () => scientific.classList.toggle('hidden');
-  const toggleHistory = () => historyPanel.classList.toggle('hidden');
-
-  const exportHistory = () => {
-    const blob = new Blob([history.join('\n')], { type: 'text/plain' });
-    const link = Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(blob),
-      download: 'calculator_history.txt',
-    });
-    link.click();
-  };
-const clearHistory = () => {
-  if (!history.length) return;
-  if (confirm("Clear all history?")) {
-    history = [];
-    localStorage.removeItem('history');
-    updateHistory([]);
-  }
-};
-
-  const startVoiceInput = () => {
-    if (!('webkitSpeechRecognition' in window)) return alert('Voice input not supported.');
-    const rec = new webkitSpeechRecognition();
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.lang = 'en-US';
-    rec.onresult = e => {
-      updateDisplay(e.results[0][0].transcript);
-      calculate();
+    const updateDisplay = val => display.value = val;
+    const append = val => {
+      const lastChar = display.value.slice(-1);
+      const isOp = /[+\-*/%.]/.test(val), lastIsOp = /[+\-*/%.]/.test(lastChar);
+      if (isOp && lastIsOp) display.value = display.value.slice(0, -1) + val;
+      else { undoStack.push(display.value); redoStack = []; display.value += val; }
     };
-    rec.onerror = e => alert('Voice error: ' + e.error);
-    rec.start();
-  };
+    const clearDisplay = () => updateDisplay('');
+    const deleteChar = () => updateDisplay(display.value.slice(0, -1));
+    const toRadians = deg => deg * (Math.PI / 180);
+    const sanitize = expr => expr.replace(/[+\-*/%.]+$/, '');
 
-  const formatTime = s => {
-    const m = Math.floor(s / 60), sec = s % 60;
-    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-  };
+    function calculate() {
+      try {
+        const expr = sanitize(display.value);
+        if (!expr) return;
+        const result = Function('"use strict";return (' + expr + ')')();
+        history.unshift(`${expr} = ${result}`);
+        localStorage.setItem('history', JSON.stringify(history));
+        updateHistory(history);
+        updateDisplay(result);
+      } catch {
+        updateDisplay('Error');
+      }
+    }
 
-  const startTimer = () => {
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      timerSeconds++;
-      timerDisplay.textContent = formatTime(timerSeconds);
-    }, 1000);
-  };
+    const updateHistory = list => {
+      historyList.innerHTML = list.slice(0, 10).map(i => `<li>${i}</li>`).join('');
+    };
+    const filterHistory = () => {
+      const s = historySearch.value.toLowerCase();
+      updateHistory(history.filter(i => i.toLowerCase().includes(s)));
+    };
+    const undo = () => { if (undoStack.length) { redoStack.push(display.value); updateDisplay(undoStack.pop()); } };
+    const redo = () => { if (redoStack.length) { undoStack.push(display.value); updateDisplay(redoStack.pop()); } };
+    const toggleTheme = () => document.body.classList.toggle('dark');
+    const toggleScientific = () => scientific.classList.toggle('hidden');
+    const toggleHistory = () => historyPanel.classList.toggle('hidden');
+    const exportHistory = () => {
+      const blob = new Blob([history.join('\n')], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'calculator_history.txt';
+      link.click();
+    };
+    const clearHistory = () => {
+      if (history.length && confirm('Clear all history?')) {
+        history = [];
+        localStorage.removeItem('history');
+        updateHistory([]);
+      }
+    };
+    const startVoiceInput = () => {
+      const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Speech) return alert('Voice input not supported in this browser.');
+      const rec = new Speech();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-US';
+      rec.onresult = e => { updateDisplay(e.results[0][0].transcript); calculate(); };
+      rec.onerror = e => alert('Voice error: ' + e.error);
+      rec.start();
+    };
+    const formatTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    const startTimer = () => { clearInterval(timerInterval); timerInterval = setInterval(() => { timerSeconds++; timerDisplay.textContent = formatTime(timerSeconds); }, 1000); };
+    const stopTimer = () => clearInterval(timerInterval);
+    const resetTimer = () => { stopTimer(); timerSeconds = 0; timerDisplay.textContent = '00:00'; };
 
-  const stopTimer = () => clearInterval(timerInterval);
-  const resetTimer = () => {
-    stopTimer();
-    timerSeconds = 0;
-    timerDisplay.textContent = '00:00';
-  };
+    document.addEventListener('keydown', e => {
+      const k = e.key;
+      if ("0123456789+-*/%.().".includes(k)) append(k);
+      else if (k === 'Enter') calculate();
+      else if (k === 'Backspace') deleteChar();
+      else if (k === 'Escape') clearDisplay();
+    });
 
-  document.addEventListener('keydown', e => {
-    const { key } = e;
-    if ("0123456789+-*/%.().".includes(key)) append(key);
-    else if (key === 'Enter') calculate();
-    else if (key === 'Backspace') deleteChar();
-    else if (key === 'Escape') clearDisplay();
-  });
-
-  // Load theme & history
-  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
-  updateHistory(history);
-</script></body>
+    if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    updateHistory(history);
+  </script></body>
 </html>
